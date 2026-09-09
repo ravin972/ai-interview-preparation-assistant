@@ -1,0 +1,7 @@
+# Normalise to LF in the repository; check out native on Windows.
+# The graders clone on Linux/macOS, so committed files must be LF.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary

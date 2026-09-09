@@ -1,0 +1,37 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build output
+dist/
+build/
+out/
+.next/
+*.tsbuildinfo
+
+# test / coverage
+coverage/
+.vitest/
+
+# secrets - never commit
+.env
+.env.local
+.env.*.local
+
+# evaluator output (generated artefact, not source)
+kits.json
+/tmp-kits*.json
+
+# editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# platform
+.vercel/
+.render/
+
+# logs
+*.log
+npm-debug.log*

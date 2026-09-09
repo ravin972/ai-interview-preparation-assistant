@@ -1,0 +1,11 @@
+{
+  "name": "@kit/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Framework-independent domain, retrieval, LLM orchestration and pipeline logic. Must not import Express or MongoDB.",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

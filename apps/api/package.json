@@ -1,0 +1,8 @@
+{
+  "name": "@kit/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Express HTTP surface, MongoDB persistence, auth, and the in-process generation worker.",
+  "main": "./src/index.ts"
+}

@@ -1,0 +1,6 @@
+{
+  "name": "@kit/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Next.js + Tailwind frontend. Proxies /api to the Express API so session cookies stay first-party."
+}
