@@ -240,3 +240,4 @@ Stated up front rather than left for a reviewer to discover:
   request after idling.
 - **Single API instance assumed.** The job lease is written to be correct under
   concurrent claims, but horizontal scaling is untested.
+# ai-interview-preparation-assistant
