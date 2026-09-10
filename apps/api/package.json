@@ -4,5 +4,28 @@
   "private": true,
   "type": "module",
   "description": "Express HTTP surface, MongoDB persistence, auth, and the in-process generation worker.",
-  "main": "./src/index.ts"
+  "main": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "tsx src/index.ts",
+    "start:worker": "tsx src/worker.ts",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@kit/core": "*",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "mongodb": "^6.13.0",
+    "zod": "^4.6.0"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.8",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/supertest": "^6.0.2",
+    "mongodb-memory-server": "^10.1.4",
+    "supertest": "^7.0.0"
+  }
 }

@@ -4,5 +4,8 @@
   "private": true,
   "type": "module",
   "description": "Batch evaluator CLI. Uses the same runPipeline() as the API. No database, no auth.",
-  "main": "./src/cli.ts"
+  "main": "./src/cli.ts",
+  "dependencies": {
+    "@kit/core": "*"
+  }
 }

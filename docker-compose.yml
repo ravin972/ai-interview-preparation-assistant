@@ -1,0 +1,95 @@
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: prepkit-mongo
+    restart: unless-stopped
+    command: ['mongod', '--replSet', 'rs0', '--bind_ip_all', '--port', '27017']
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'mongosh --quiet --eval "try { rs.status().ok } catch(e) { rs.initiate({_id:''rs0'',members:[{_id:0,host:''mongo:27017''}]}) }; if (!db.hello().isWritablePrimary) { quit(1); }"',
+        ]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+      start_period: 2s
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: prepkit-api
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - MONGODB_URI=mongodb://mongo:27017/interview_kit?replicaSet=rs0
+      - MONGODB_DB=interview_kit
+      - WEB_ORIGIN=http://localhost:3000
+      - SESSION_TTL_HOURS=168
+      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.6-flash}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - GROQ_MODEL=${GROQ_MODEL:-openai/gpt-oss-120b}
+      - TAVILY_API_KEY=${TAVILY_API_KEY:-}
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:4000/health/ready']
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: prepkit-worker
+    restart: unless-stopped
+    command: ['npm', 'run', 'start:worker', '--workspace=@kit/api']
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongo:27017/interview_kit?replicaSet=rs0
+      - MONGODB_DB=interview_kit
+      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.6-flash}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - GROQ_MODEL=${GROQ_MODEL:-openai/gpt-oss-120b}
+      - TAVILY_API_KEY=${TAVILY_API_KEY:-}
+    healthcheck:
+      disable: true
+    depends_on:
+      mongo:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: prepkit-web
+    restart: unless-stopped
+    ports:
+      - '${WEB_PORT:-3000}:3000'
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - API_PROXY_TARGET=http://api:4000
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  mongo_data:

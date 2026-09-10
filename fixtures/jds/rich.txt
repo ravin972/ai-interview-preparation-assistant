@@ -1,0 +1,39 @@
+Senior Frontend Engineer
+Acme Robotics - Bristol (hybrid, 2 days on site)
+
+About the role
+We are looking for a Senior Frontend Engineer to join the Fleet Console team.
+You will own the operator-facing interface that warehouse staff use to monitor
+and control several thousand robots in real time.
+
+What you will do
+- Build and maintain the operator console used in live warehouse environments.
+- Work with designers to turn complex telemetry into calm, legible interfaces.
+- Own your services in production and take part in a shared on-call rota.
+- Mentor two mid-level engineers and review their work.
+- Contribute to our design system and component library.
+
+Requirements
+- 5+ years of professional frontend engineering experience.
+- Deep expertise with React and TypeScript in production systems.
+- Strong understanding of browser rendering performance and profiling.
+- Experience with real-time data in the browser, such as WebSockets or SSE.
+- Demonstrable experience writing automated tests for UI code.
+- Clear written communication - we are a documentation-heavy company.
+
+Nice to have
+- Experience with WebGL or canvas-based visualisation.
+- Familiarity with robotics, logistics or industrial control systems.
+- Exposure to Rust or Go on the backend.
+- Prior experience mentoring or leading a small team.
+
+Benefits
+- 28 days holiday plus bank holidays.
+- Private medical insurance and a cycle-to-work scheme.
+- 2,000 GBP annual learning budget.
+- Enhanced parental leave.
+
+Acme Robotics is an equal opportunity employer. We celebrate diversity and are
+committed to creating an inclusive environment for all employees. We do not
+discriminate on the basis of race, religion, colour, national origin, gender,
+sexual orientation, age, marital status, or disability status.

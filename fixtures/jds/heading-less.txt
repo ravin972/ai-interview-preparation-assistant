@@ -1,0 +1,15 @@
+Acme Robotics is hiring a backend engineer for our fleet services team in
+Bristol. You would be joining a group of six engineers who keep the coordination
+layer running for several thousand robots, so we need someone who has spent at
+least four years building production backend systems and who is comfortable
+owning a service end to end. Day to day you would be designing and shipping HTTP
+APIs in Node.js and TypeScript, tuning PostgreSQL queries that have started to
+creak under load, and taking your turn on a shared on-call rota. We care a great
+deal about people who can reason about distributed systems failure modes, since
+a stalled robot is a stalled warehouse, and we expect you to write tests as a
+matter of course rather than as an afterthought. It would be genuinely useful if
+you had worked with Kubernetes before, and anyone who has touched ROS or another
+robotics middleware will find plenty to be interested in here, though neither is
+a dealbreaker. We would also love it if you enjoyed mentoring, because two of
+the team are relatively junior. Compensation is competitive and we offer 28 days
+of holiday.

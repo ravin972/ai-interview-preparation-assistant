@@ -17,9 +17,18 @@
     "evaluate": "tsx tools/evaluate/src/cli.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b",
-    "fixtures:serve": "tsx fixtures/site/server.ts",
-    "dev:api": "npm run dev --workspace @kit/api",
-    "dev:web": "npm run dev --workspace @kit/web"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "npm run build --workspace=@kit/web",
+    "format": "prettier --write \"**/*.{ts,tsx,json,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,yml,yaml}\"",
+    "fixtures:serve": "tsx fixtures/serve.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "@vitejs/plugin-react": "^6.1.1",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
   }
 }

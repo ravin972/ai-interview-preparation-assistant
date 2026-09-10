@@ -1,0 +1,17 @@
+.git
+.github
+node_modules
+dist
+.next
+.env
+.env.local
+coverage
+test-results
+test-kits.json
+.system_generated
+*.log
+.tempmediaStorage
+browser
+scratch
+*.webp
+*.png

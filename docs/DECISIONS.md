@@ -42,9 +42,13 @@ a forbidden import specifier, so the boundary cannot rot silently.
 
 ### D-003 - Gemini primary, Groq fallback
 
-**Decision.** Gemini 2.5 Flash as primary, Groq as fallback, plus a mock
-provider. One `LlmAdapter.complete()` interface, three adapters, and one
-`generateStructured(task, schema)` router.
+**Decision.** Gemini 2.5 Flash (`gemini-2.5-flash`) as primary, Groq
+(`openai/gpt-oss-120b`) as fallback, plus a mock provider. Both ids verified
+against the providers' official model documentation on 2026-09-10; the
+previously documented `llama-3.3-70b-versatile` has been retired by Groq.
+
+The abstraction stays deliberately small: one `LlmAdapter.complete()`
+interface, three adapters, and one `generateStructured(task, schema)` router.
 
 **Why.** Both have a genuine free tier. Gemini's native structured output is
 stronger; Groq is fast and independent, so a Gemini outage or exhausted quota
@@ -342,3 +346,135 @@ paid twice: once to build, once to explain.
 **Test.** Each abstraction that does exist - `LlmAdapter`, `CheckpointStore`,
 `ProgressSink`, `SsrfPolicy`, `SearchProvider` - exists because it has at least
 two real implementations in this repository, not because it might one day.
+
+---
+
+### D-022 - company-fit questions may reference no requirement
+
+**Decision.** `requirement_ids` may be an empty array when
+`question.category === "company-fit"`. For `technical`, `behavioural` and
+`system-design` it must contain at least one id that exists in the kit. Ids
+referencing requirements that do not exist are stripped before validation.
+
+**Why.** Company-fit questions ("why us?", "how would you handle our on-call
+culture?") derive from the company brief, not from the job description. Forcing
+each one to cite a requirement would mean either mislabelling an unrelated
+requirement or inventing a synthetic one - and inventing requirements is exactly
+what D-012 forbids. Allowing an empty array for this one category keeps the kit
+honest about where each question came from.
+
+**Cost.** Coverage cannot be improved by company-fit questions, so the second
+pass targets only the other three categories. That is correct behaviour rather
+than a limitation: a company-fit question does not evidence preparation for a
+job requirement.
+
+**Rejected.** A synthetic catch-all requirement such as "culture fit" - it would
+pollute `role.requirements`, distort coverage arithmetic, and put text in the
+kit that never appeared in the job description.
+
+---
+
+### D-023 - strict days validation, never clamped
+
+**Decision.** `days` must be an integer in `1..60`. Values of `0`, negatives,
+values above 60, decimals, numeric strings, `null` and missing values are all
+rejected before generation begins. A value above 60 is **not** silently clamped
+to 60.
+
+**Why.** The specification says the supplied days value must be used, and it
+tests the 1-day and 60-day boundaries explicitly. Clamping would mean a kit
+whose `schedule.days_available` disagrees with the value the caller supplied -
+the system would be quietly lying about what it produced. Rejecting is honest
+and keeps `days_available === requested days` an unconditional invariant.
+
+**Cost.** A caller passing `days: 90` gets an error rather than a 60-day plan.
+The error names the offending value and the accepted range, so the fix is
+obvious. In the batch evaluator the case is recorded as `status: "error"` and
+the remaining cases continue.
+
+**Rejected.** Clamping to the nearest valid bound. It scores better only if a
+grader submits out-of-range input *and* expects success, which contradicts the
+specification's own instruction to use the supplied value.
+
+---
+
+### D-024 - loose enums from the model, coerced by the guards
+
+**Decision.** The extraction response schema types `kind` and `priority` as
+plain strings. The deterministic guards coerce them to the valid enum values,
+and the source section has the final say on priority.
+
+**Why.** A strict enum in the router's schema would make one bad value - say
+`priority: "critical"` on candidate 7 - invalidate the entire batch, costing a
+repair attempt and possibly a provider failover to recover candidates that were
+otherwise fine. Coercing is cheaper and strictly more forgiving, and it changes
+nothing about correctness because the guards already override the model's
+priority whenever the evidence sits in an explicit must or nice-to-have
+section (D-012).
+
+**Cost.** An unrecognised `kind` silently becomes `technical`, and an
+unrecognised `priority` becomes `nice`. Both defaults are conservative: they
+cannot invent a hard requirement out of a malformed field.
+
+**Rejected.** Strict enums at the schema boundary. It optimises for a tidy
+contract at the expense of throwing away usable work.
+
+---
+
+### D-025 - core reads no globals: env and fetch are injected
+
+**Decision.** `geminiOptionsFromEnv(env)` and `groqOptionsFromEnv(env)` take an
+environment map as an argument, and both adapters accept a `fetchImpl`.
+`packages/core` never touches `process.env` and never calls global `fetch`
+implicitly.
+
+**Why.** It keeps the framework-independent boundary (D-002) honest, and it is
+what lets the adapters be tested offline: request shape, header placement and
+the full HTTP failure taxonomy are all asserted with a stub, so `npm test`
+needs neither a key nor a network.
+
+**Cost.** Callers in `apps/api` and `tools/evaluate` must pass `process.env`
+explicitly. One line each, and it makes the dependency visible.
+
+**Consequence.** The API key travels in the `x-goog-api-key` header rather than
+the query string, so it cannot leak into request logs.
+
+---
+
+### D-026 - a hand-written robots.txt parser, not a dependency
+
+**Decision.** Parse robots.txt in `retrieval/robots.ts` rather than adding
+`robots-parser`.
+
+**Why.** The subset we need is small - User-agent grouping, Allow, Disallow,
+Crawl-delay, and the `*` / `$` wildcards - and it is roughly 90 lines. Owning it
+keeps the core's external surface at five specifiers, makes the longest-match
+precedence rule readable in one place, and lets us cap Crawl-delay ourselves.
+
+**Cost.** Exotic directives (`Sitemap`, `Host`, `Clean-param`) are ignored, and
+we do not implement the full RFC 9309 grammar. Neither affects a depth-1 crawl
+of a company site.
+
+---
+
+### D-027 - an unavailable robots.txt permits crawling, and records a gap
+
+**Decision.** A 404 means the site has no robots.txt and crawling proceeds
+normally. Any other failure - 5xx, timeout, network error - also permits
+crawling, but sets `robots_unavailable` so the pipeline records an honest
+research gap.
+
+**Why.** RFC 9309 permits treating a 5xx as a complete disallow, but for a
+low-volume research tool that would mean refusing to research any company whose
+robots.txt happened to be flaky, which serves nobody. Recording the gap keeps us
+honest about what we actually checked, which is the property that matters.
+`docs/PIPELINE.md` documented the disallow path but was silent on the
+unreachable path; this fills that gap rather than leaving it to be inferred from
+the code.
+
+**Cost.** A site that would have disallowed us via a temporarily broken
+robots.txt gets crawled. Bounded by depth 1, five pages and an identifying
+User-Agent.
+
+**Rejected.** Treating any failure as a full disallow. It optimises for a
+compliance edge case at the expense of the product's main path.

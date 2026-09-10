@@ -211,9 +211,81 @@ and stage 12 (flashcards). A restarted process resumes at
 | No about or hiring page discovered | gap recorded; brief built from the homepage alone |
 | No public interview discussion | gap recorded - expected, not a failure |
 | robots.txt disallows a path | page skipped and listed in `research.robotsBlocked` |
+| robots.txt returns 404 | no robots.txt exists; crawling proceeds (D-027) |
+| robots.txt unreachable (5xx, timeout) | crawling proceeds, gap `robots_unavailable` recorded (D-027) |
 | Thin or two-line JD | thin honest kit; the overlap guard blocks invented requirements |
 | Invalid or truncated LLM JSON | one schema-aware repair, then the fallback provider |
 | 429 / 5xx from a provider | bounded backoff, then the fallback provider |
 | Duplicate JD + URL for the same user | 409 with the existing kit id and an explicit "create anyway" |
 | days = 1 / 60 / invalid | see section 6 |
 | Process restart mid-generation | lease expires, sweeper resumes from the last checkpoint |
+
+## 9. Kit validation rules (stage 16)
+
+Enforced by a Zod schema plus cross-reference invariants. Every rule below is a
+hard failure: a kit that breaks one is never persisted and never written to the
+evaluator report as `status: "ok"`.
+
+**Structure**
+
+- the exported kit's top-level key set equals the Appendix A template exactly
+- `source.jd_chars` equals the length of the original JD text
+- `source.researched_at` is ISO-8601 UTC
+- `source.pages_used` contains only URLs the fetcher actually retrieved
+
+**Identifiers**
+
+- ids match `r<n>`, `q<n>`, `f<n>` and are unique within the kit
+- ids are issued by the kit's `idCounters` and are never reused (D-013)
+
+**Enumerations and ranges**
+
+- `requirement.kind` is one of `technical`, `behavioural`, `domain`
+- `requirement.priority` is one of `must`, `nice`
+- `question.category` is one of `technical`, `behavioural`, `system-design`,
+  `company-fit`
+- `question.difficulty` is an integer in `1..3`
+- every `schedule.days[].minutes` is an integer
+
+**Requirement references (D-022)**
+
+Requirement ids that do not exist in the kit are stripped before validation, so
+a model hallucinating `r99` cannot corrupt coverage. After stripping:
+
+| Question category | `requirement_ids` |
+|---|---|
+| `technical` | at least one existing id |
+| `behavioural` | at least one existing id |
+| `system-design` | at least one existing id |
+| `company-fit` | **may be empty** |
+
+`company-fit` questions are derived from the company brief rather than from the
+job description, so they legitimately map to no requirement. Attaching a
+synthetic requirement purely to satisfy the array would mean inventing a
+requirement, which D-012 forbids. A `company-fit` question that genuinely does
+relate to a requirement still references it.
+
+**Schedule (D-023)**
+
+- `schedule.days_available` equals the requested `days` exactly
+- `schedule.days.length` equals `schedule.days_available`
+- day numbers are exactly `1..days`, ascending
+- every `question_ids` entry resolves to a question in the kit
+- every must-have requirement is referenced by at least one question that
+  appears somewhere in the schedule
+
+**Days input**
+
+`days` is validated before generation begins and is never clamped or coerced:
+
+| Input | Result |
+|---|---|
+| integer `1..60` | accepted, used verbatim |
+| `0`, negative | rejected |
+| `> 60` | rejected - **not** clamped to 60 |
+| decimal, e.g. `2.5` | rejected |
+| numeric string, e.g. `"5"` | rejected |
+| `null`, `undefined`, missing | rejected |
+
+In the API this is a 400 with the offending value named. In the evaluator the
+case is recorded as `status: "error"` and the run continues.

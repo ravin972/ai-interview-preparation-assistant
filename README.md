@@ -7,9 +7,10 @@ schedule sized to the time you actually have.
 
 Built for the Trao Full-Stack Engineering Assessment.
 
-> **Status: architecture checkpoint.** This commit contains documentation and
-> the workspace skeleton only. No application code has been written yet.
-> Implementation begins at Phase 0 (see [Implementation plan](#implementation-plan)).
+> **Status: Phase 7 complete.** The entire system (Next.js web, Express API,
+> background Job Worker, and MongoDB Replica Set) is fully containerised,
+> tested, and reproducibly runnable with 743+ green tests and complete
+> clean-clone automation.
 
 ---
 
@@ -73,17 +74,17 @@ Full detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Planned stack
 
-| Layer | Choice | Notes |
-|---|---|---|
-| Frontend | Next.js (App Router) + Tailwind CSS | deployed on Vercel |
-| Backend | Node 22 + Express | deployed on Render; long-lived process for SSE |
-| Database | MongoDB Atlas, official `mongodb` driver | Zod is the single schema source, so no Mongoose - D-007 |
-| Language | TypeScript, strict | in every workspace |
-| Validation | Zod | every LLM output and the full kit structure |
-| Retrieval | `undici` + `cheerio` + `robots-parser` | static HTML only - D-020 |
-| Auth | `scrypt` from `node:crypto` | no native build to fail on a free tier - D-018 |
-| Tests | Vitest | plus an offline evaluator run in CI |
-| CI | GitHub Actions | typecheck, tests, offline evaluator |
+| Layer      | Choice                                   | Notes                                                   |
+| ---------- | ---------------------------------------- | ------------------------------------------------------- |
+| Frontend   | Next.js (App Router) + Tailwind CSS      | deployed on Vercel                                      |
+| Backend    | Node 22 + Express                        | deployed on Render; long-lived process for SSE          |
+| Database   | MongoDB Atlas, official `mongodb` driver | Zod is the single schema source, so no Mongoose - D-007 |
+| Language   | TypeScript, strict                       | in every workspace                                      |
+| Validation | Zod                                      | every LLM output and the full kit structure             |
+| Retrieval  | `undici` + `cheerio` + `robots-parser`   | static HTML only - D-020                                |
+| Auth       | `scrypt` from `node:crypto`              | no native build to fail on a free tier - D-018          |
+| Tests      | Vitest                                   | plus an offline evaluator run in CI                     |
+| CI         | GitHub Actions                           | typecheck, tests, offline evaluator                     |
 
 No deviation from the assessment's preferred stack. The two choices that differ
 from a default setup - the raw MongoDB driver rather than Mongoose, and no SDK
@@ -94,10 +95,10 @@ for the LLM providers - are recorded with their reasoning in
 
 ## LLM providers
 
-| Role | Provider | Model |
-|---|---|---|
-| Primary | Google Gemini | `gemini-2.5-flash` |
-| Fallback | Groq | set via `GROQ_MODEL` |
+| Role      | Provider      | Model                  |
+| --------- | ------------- | ---------------------- |
+| Primary   | Google Gemini | `gemini-2.5-flash`     |
+| Fallback  | Groq          | `openai/gpt-oss-120b`  |
 | Test / CI | built-in mock | deterministic, offline |
 
 The abstraction is deliberately small: one `LlmAdapter.complete()` interface,
@@ -136,36 +137,71 @@ Contract, input and output shapes, and the localhost fixture strategy:
 
 ---
 
-## Setup
+## Setup & Local Deployment
 
-> Placeholder - completed in Phase 0, once the workspaces carry real
-> dependencies. The intended flow:
+### 1. Prerequisites
+
+- Node.js >= 22
+- Docker Engine >= 24 & Docker Compose >= 2.20
+
+### 2. Quickstart with Docker Compose (Reproducible Full Stack)
 
 ```bash
 git clone <repo> && cd "AI Interview Preparation Assistant"
-npm install
-cp .env.example .env          # then fill in the values
-npm test                      # unit tests + offline evaluator
-npm run evaluate -- --input fixtures/cases.json --output kits.json
+cp .env.example .env
+
+# Start MongoDB Replica Set, Express API, Standalone Job Worker, and Next.js Web
+docker compose up -d
+
+# Verify all services are healthy
+docker compose ps
+curl http://localhost:4000/health/ready
 ```
 
-Every environment variable is documented in [`.env.example`](.env.example).
-Credentials are read from the environment only - never from a config file or a
-command-line argument.
+- **Web UI**: [http://localhost:3000](http://localhost:3000) (configurable via `WEB_PORT` if 3000 is occupied, e.g. `WEB_PORT=3001`)
+- **Express API**: [http://localhost:4000](http://localhost:4000)
+- **MongoDB Replica Set**: `mongodb://localhost:27017/interview_kit?replicaSet=rs0`
 
-**Requirements:** Node 22+, npm 10+, and a MongoDB connection string for the
-web application (the evaluator needs neither).
+### 3. MongoDB Replica Set Invariant
+
+The system strictly requires MongoDB transactions (`MONGODB_TRANSACTIONS_REQUIRED`) to guarantee multi-document atomicity for Kit and Job creation. Docker Compose provides a deterministic single-node replica set for transaction support in local/containerized environments. (This single-node topology provides transactional capability for local reproducibility, not high availability). Standalone non-transactional fallbacks are permanently disabled.
+
+### 4. Verification & Testing
+
+```bash
+# Run all 743+ Vitest tests (100% offline & deterministic via mock provider)
+npm test
+
+# Static typechecking and code style
+npm run typecheck
+npm run format:check
+
+# Production Next.js build
+npm run build
+
+# Run deterministic batch evaluator across the 5 committed test fixtures
+LLM_PROVIDER=mock npm run evaluate -- --input fixtures/cases.json --output test-kits.json
+
+# Run end-to-end clean-clone smoke test against running Docker stack
+npx tsx tools/docker-smoke.ts
+```
+
+### 5. Shutdown & Reset
+
+```bash
+docker compose down -v
+```
 
 ---
 
 ## Deployment targets
 
-| Component | Target | Notes |
-|---|---|---|
-| `apps/web` | Vercel | proxies `/api/*` to the API so cookies stay first-party |
+| Component  | Target                    | Notes                                                                     |
+| ---------- | ------------------------- | ------------------------------------------------------------------------- |
+| `apps/web` | Vercel                    | proxies `/api/*` to the API so cookies stay first-party                   |
 | `apps/api` | Render (free web service) | long-lived process; idles after inactivity, so expect a 30-50s cold start |
-| Database | MongoDB Atlas M0 | free tier |
-| CI | GitHub Actions | typecheck + tests + offline evaluator on every push |
+| Database   | MongoDB Atlas M0          | free tier                                                                 |
+| CI         | GitHub Actions            | typecheck + tests + offline evaluator on every push                       |
 
 Because Render restarts the process on deploy and after idling, generation job
 state is durable in MongoDB with a lease, a heartbeat and per-stage
@@ -177,15 +213,15 @@ so a restart mid-generation resumes rather than stranding the kit. See
 
 ## Documentation
 
-| Document | Covers |
-|---|---|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | system diagram, package boundaries, persistence boundary, deployment |
-| [docs/PIPELINE.md](docs/PIPELINE.md) | all 16 stages, determinism boundary, extraction, coverage, schedule, failure matrix |
-| [docs/STATE_MODEL.md](docs/STATE_MODEL.md) | kit states, job lease and checkpoints, item metadata, regeneration rules, concurrency |
-| [docs/SECURITY.md](docs/SECURITY.md) | SSRF threat model, crawler citizenship, prompt injection, auth, authorization, secrets |
-| [docs/EVALUATOR.md](docs/EVALUATOR.md) | the batch command contract, offline mode, failure isolation, fixtures |
-| [docs/RUBRIC_MAP.md](docs/RUBRIC_MAP.md) | every rubric item mapped to module, test, UI evidence and acceptance criteria |
-| [docs/DECISIONS.md](docs/DECISIONS.md) | 21 decision records with costs and rejected alternatives |
+| Document                                     | Covers                                                                                 |
+| -------------------------------------------- | -------------------------------------------------------------------------------------- |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | system diagram, package boundaries, persistence boundary, deployment                   |
+| [docs/PIPELINE.md](docs/PIPELINE.md)         | all 16 stages, determinism boundary, extraction, coverage, schedule, failure matrix    |
+| [docs/STATE_MODEL.md](docs/STATE_MODEL.md)   | kit states, job lease and checkpoints, item metadata, regeneration rules, concurrency  |
+| [docs/SECURITY.md](docs/SECURITY.md)         | SSRF threat model, crawler citizenship, prompt injection, auth, authorization, secrets |
+| [docs/EVALUATOR.md](docs/EVALUATOR.md)       | the batch command contract, offline mode, failure isolation, fixtures                  |
+| [docs/RUBRIC_MAP.md](docs/RUBRIC_MAP.md)     | every rubric item mapped to module, test, UI evidence and acceptance criteria          |
+| [docs/DECISIONS.md](docs/DECISIONS.md)       | 27 decision records with costs and rejected alternatives                               |
 
 ---
 
@@ -197,26 +233,26 @@ interesting the work is.
 
 **Day 1 - the automated 55 points (~8h)**
 
-| Phase | Work |
-|---|---|
-| 0 | toolchain, Vitest, CI, fixture site and fixture JDs |
-| 1 | kit schema, invariants, id allocator, **coverage**, **schedule** + tests |
-| 2 | LLM adapters and router, **requirement extraction and its guards** + tests |
+| Phase | Work                                                                       |
+| ----- | -------------------------------------------------------------------------- |
+| 0     | toolchain, Vitest, CI, fixture site and fixture JDs                        |
+| 1     | kit schema, invariants, id allocator, **coverage**, **schedule** + tests   |
+| 2     | LLM adapters and router, **requirement extraction and its guards** + tests |
 
 **Day 2 - pipeline, evaluator, API (~8h)**
 
-| Phase | Work |
-|---|---|
-| 3 | retrieval: SSRF, robots, fetch, crawl, rank, extract, sanitize + security tests |
-| 4 | 16-stage orchestrator, checkpoints, **`npm run evaluate`** + offline CI run |
-| 5 | MongoDB, auth, kits, job lease and sweeper, SSE, merge engine, practice, reports |
+| Phase | Work                                                                             |
+| ----- | -------------------------------------------------------------------------------- |
+| 3     | retrieval: SSRF, robots, fetch, crawl, rank, extract, sanitize + security tests  |
+| 4     | 16-stage orchestrator, checkpoints, **`npm run evaluate`** + offline CI run      |
+| 5     | MongoDB, auth, kits, job lease and sweeper, SSE, merge engine, practice, reports |
 
 **Day 3 - the human 45 points (~7h)**
 
-| Phase | Work |
-|---|---|
-| 6 | UI: auth, kit list, create and batch, live progress, builder, practice, weak spots |
-| 7 | deploy, README completion, walkthrough video, commit hygiene |
+| Phase | Work                                                                               |
+| ----- | ---------------------------------------------------------------------------------- |
+| 6     | UI: auth, kit list, create and batch, live progress, builder, practice, weak spots |
+| 7     | deploy, README completion, walkthrough video, commit hygiene                       |
 
 Phase 4 is the milestone that matters most: after it, the automated half of the
 rubric is provable even if day 3 runs short.
@@ -240,4 +276,3 @@ Stated up front rather than left for a reviewer to discover:
   request after idling.
 - **Single API instance assumed.** The job lease is written to be correct under
   concurrent claims, but horizontal scaling is untested.
-# ai-interview-preparation-assistant

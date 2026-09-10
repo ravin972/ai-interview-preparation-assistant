@@ -1,0 +1,42 @@
+Platform Engineer
+Acme Robotics
+
+The role
+Maintain our internal deployment tooling. Requires 3+ years with Docker and
+Kubernetes, and strong Python scripting ability.
+
+Why join Acme Robotics?
+At Acme Robotics we believe that our people are our greatest asset. We are on a
+mission to transform warehouse operations, and we know that we can only do that
+with a team that feels supported, valued and empowered to do the best work of
+their careers.
+
+What we offer
+- Competitive salary reviewed annually
+- 28 days annual leave plus all UK bank holidays
+- Private medical and dental insurance for you and your dependants
+- Life assurance at four times base salary
+- Enhanced parental leave for all parents regardless of gender
+- Cycle to work scheme and a season ticket loan
+- 2,000 GBP annual personal learning and development budget
+- Company pension with 6 percent employer contribution
+- Regular team socials, an annual company offsite, and free snacks
+- Flexible working hours and a hybrid working policy
+- Employee assistance programme with 24/7 confidential support
+
+Our commitment to diversity and inclusion
+Acme Robotics is proud to be an equal opportunity employer. All qualified
+applicants will receive consideration for employment without regard to race,
+colour, religion, sex, sexual orientation, gender identity, national origin,
+disability, protected veteran status, or any other characteristic protected by
+law. We are committed to building a team that represents a variety of
+backgrounds, perspectives and skills.
+
+Right to work
+Applicants must have the right to work in the United Kingdom. We are unable to
+provide visa sponsorship for this role at this time.
+
+Recruitment agencies
+We do not accept unsolicited CVs from recruitment agencies. Any CV submitted
+without a signed agreement in place will be considered the property of Acme
+Robotics and no fee will be payable.

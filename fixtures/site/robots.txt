@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /acme/private/
+Disallow: /acme/careers/apply
+Crawl-delay: 1
+
+Sitemap: http://127.0.0.1:8099/sitemap.xml
