@@ -51,19 +51,19 @@ https://www.loom.com/share/3b3cb5108bcc49638187acc290da2389
 
 ### Landing page
 
-<!-- TODO: Add production landing-page screenshot here -->
+![Landing page](docs/screenshots/landing-page.png)
 
 ### Generated interview kit
 
-<!-- TODO: Add production kit screenshot here -->
+![Generated interview kit](docs/screenshots/generated-kit.png)
 
 ### Practice mode
 
-<!-- TODO: Add production practice screenshot here -->
+![Practice mode](docs/screenshots/practice-mode.png)
 
 ### Dashboard
 
-<!-- TODO: Add production dashboard screenshot here -->
+![Dashboard](docs/screenshots/dashboard.png)
 
 ---
 
