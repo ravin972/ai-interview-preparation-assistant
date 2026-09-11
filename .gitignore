@@ -11,6 +11,8 @@ out/
 
 # test / coverage
 coverage/
+!packages/core/src/coverage/
+!packages/core/src/coverage/**
 .vitest/
 
 # secrets - never commit
