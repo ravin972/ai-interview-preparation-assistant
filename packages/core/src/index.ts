@@ -308,6 +308,13 @@ export {
   type SearchSnippet,
 } from './search/types.js';
 
+export {
+  TavilySearchProvider,
+  createSearchProvider,
+  tavilyOptionsFromEnv,
+  type TavilySearchProviderOptions,
+} from './search/tavily.js';
+
 // --- Pipeline Orchestration (Phase 4) ----------------------------------------
 
 export { Deadline, type DeadlineOptions } from './pipeline/budget.js';

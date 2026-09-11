@@ -10,6 +10,8 @@ import {
   createGroqAdapter,
   geminiOptionsFromEnv,
   groqOptionsFromEnv,
+  createSearchProvider,
+  type SearchProvider,
   SsrfPolicy,
 } from '@kit/core';
 import type { JobDoc, KitDoc, ItemMeta } from '../db/types.js';
@@ -34,6 +36,7 @@ export class JobWorker {
     private readonly db: Db,
     workerId?: string,
     private readonly adapters?: readonly LlmAdapter[],
+    private readonly searchProvider?: SearchProvider,
   ) {
     this.workerId =
       workerId ?? `worker-${process.pid}-${crypto.randomBytes(4).toString('hex')}`;
@@ -150,6 +153,8 @@ export class JobWorker {
       // Policy is strict by construction in the API (docs/DECISIONS.md D-016)
       const policy = SsrfPolicy.strict();
 
+      const searchProvider = this.searchProvider ?? createSearchProvider(process.env);
+
       const pipelineResult = await runPipeline(
         {
           jd: kitDoc.input.jd,
@@ -158,6 +163,7 @@ export class JobWorker {
         },
         {
           adapters: activeAdapters,
+          searchProvider,
           policy,
           checkpointStore,
           progressSink,

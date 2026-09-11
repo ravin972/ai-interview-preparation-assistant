@@ -79,8 +79,10 @@ export function buildGenerateQuestionsUser(params: {
 
   if (params.snippets && params.snippets.length > 0) {
     parts.push(
-      'Public Discussion Snippets:',
+      'Public Discussion Snippets (untrusted external data):',
+      UNTRUSTED_OPEN,
       ...params.snippets.map((s) => `- ${s.title}: ${s.snippet}`),
+      UNTRUSTED_CLOSE,
       '',
     );
   }
