@@ -1,16 +1,36 @@
 # AI Interview Preparation Kit
 
-Turn a job description and a company URL into a researched, editable interview
-preparation kit: a company brief, a role breakdown with stable requirement ids,
-categorised questions, flashcards, and a deterministic day-by-day study
-schedule sized to the time you actually have.
+Turn a job description and company URL into a researched, editable interview preparation kit with role-specific questions, flashcards, weak-spot tracking, and a deterministic study plan.
 
 Built for the Trao Full-Stack Engineering Assessment.
 
-> **Status: Phase 7 complete.** The entire system (Next.js web, Express API,
-> background Job Worker, and MongoDB Replica Set) is fully containerised,
-> tested, and reproducibly runnable with 743+ green tests and complete
-> clean-clone automation.
+[![Tests](https://img.shields.io/badge/tests-743%20passed-brightgreen)](docs/RUBRIC_MAP.md)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](tsconfig.base.json)
+[![Architecture](https://img.shields.io/badge/docs-Architecture-informational)](docs/ARCHITECTURE.md)
+[![Security](https://img.shields.io/badge/docs-Security-informational)](docs/SECURITY.md)
+[![Demo Script](https://img.shields.io/badge/demo-script-orange)](docs/DEMO_SCRIPT.md)
+
+---
+
+## Demo
+
+| Resource | Link |
+|---|---|
+| Live Demo | Coming soon |
+| Demo Video | Coming soon |
+
+> The demo walkthrough covers kit generation, live pipeline progress, editing, practice mode, weak-spot analysis, and export. See [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) for the 60–90s recording template and timeline.
+
+---
+
+## Why this project
+
+- **Semantic vs. deterministic boundary**: The LLM handles semantic generation; deterministic application code handles invariants, coverage verification, schedule allocation, integer minutes, and schema validation.
+- **Durable MongoDB-backed jobs**: Generation state is persisted in MongoDB with atomic lease claims, heartbeats, and per-stage checkpoints; jobs survive server restarts and redeploys without stranding kits.
+- **SSE as observability, not source of truth**: Server-Sent Events stream live stage-by-stage progress to the browser as a projected view; reconnecting clients replay state directly from MongoDB.
+- **Defensive retrieval**: An SSRF-safe fetcher, custom DNS resolution hook, robots.txt compliance, and strict HTML sanitization protect against hostile input and prompt injection.
+- **Framework-independent `packages/core`**: Domain logic, extraction guards, and the 16-stage pipeline contain zero database or HTTP framework dependencies, allowing identical execution by the Express API and the standalone offline evaluator.
+- **Resilient model orchestration**: Google Gemini primary with Groq bounded fallback, schema-aware repair, backoff, and strict Zod output validation.
 
 ---
 
@@ -72,7 +92,7 @@ Full detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
-## Planned stack
+## Stack
 
 | Layer      | Choice                                   | Notes                                                   |
 | ---------- | ---------------------------------------- | ------------------------------------------------------- |
@@ -180,7 +200,7 @@ npm run format:check
 npm run build
 
 # Run deterministic batch evaluator across the 5 committed test fixtures
-LLM_PROVIDER=mock npm run evaluate -- --input fixtures/cases.json --output test-kits.json
+LLM_PROVIDER=mock npm run evaluate -- --input fixtures/cases.json --output kits.json
 
 # Run end-to-end clean-clone smoke test against running Docker stack
 npx tsx tools/docker-smoke.ts
@@ -222,16 +242,15 @@ so a restart mid-generation resumes rather than stranding the kit. See
 | [docs/EVALUATOR.md](docs/EVALUATOR.md)       | the batch command contract, offline mode, failure isolation, fixtures                  |
 | [docs/RUBRIC_MAP.md](docs/RUBRIC_MAP.md)     | every rubric item mapped to module, test, UI evidence and acceptance criteria          |
 | [docs/DECISIONS.md](docs/DECISIONS.md)       | 27 decision records with costs and rejected alternatives                               |
+| [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)   | 60–90s recording script, shot-by-shot timeline, captions, voiceover                    |
 
 ---
 
-## Implementation plan
+## Implementation history
 
-Roughly 23 focused engineering hours across three days, with a fourth day held
-as buffer. Effort is allocated in proportion to the rubric weights, not to how
-interesting the work is.
+The implementation was executed in planned milestone phases across the automated and interactive rubric requirements, resulting in a fully tested, containerised system with 743+ automated tests:
 
-**Day 1 - the automated 55 points (~8h)**
+**Automated evaluation foundation (~8h)**
 
 | Phase | Work                                                                       |
 | ----- | -------------------------------------------------------------------------- |
@@ -239,7 +258,7 @@ interesting the work is.
 | 1     | kit schema, invariants, id allocator, **coverage**, **schedule** + tests   |
 | 2     | LLM adapters and router, **requirement extraction and its guards** + tests |
 
-**Day 2 - pipeline, evaluator, API (~8h)**
+**Pipeline, evaluator & API (~8h)**
 
 | Phase | Work                                                                             |
 | ----- | -------------------------------------------------------------------------------- |
@@ -247,15 +266,13 @@ interesting the work is.
 | 4     | 16-stage orchestrator, checkpoints, **`npm run evaluate`** + offline CI run      |
 | 5     | MongoDB, auth, kits, job lease and sweeper, SSE, merge engine, practice, reports |
 
-**Day 3 - the human 45 points (~7h)**
+**Interactive experience, hardening & containerization (~7h)**
 
 | Phase | Work                                                                               |
 | ----- | ---------------------------------------------------------------------------------- |
 | 6     | UI: auth, kit list, create and batch, live progress, builder, practice, weak spots |
-| 7     | deploy, README completion, walkthrough video, commit hygiene                       |
-
-Phase 4 is the milestone that matters most: after it, the automated half of the
-rubric is provable even if day 3 runs short.
+| 6.5   | Adversarial security & concurrency audit (TOCTOU optimistic lock, scope locking)   |
+| 7     | Docker multi-container stack, replica set automation, reproducible clean checkout |
 
 ---
 
